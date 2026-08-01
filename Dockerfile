@@ -50,7 +50,10 @@ RUN python3 -m venv --system-site-packages /opt/tdm-venv \
     && /opt/tdm-venv/bin/pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=tdm:tdm . ./
-RUN chmod 0755 /app/docker/entrypoint.sh
+# Windows Jenkins agents may have core.autocrlf enabled. Normalize the Linux
+# entrypoint in the image as a safeguard even when checkout attributes are ignored.
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh \
+    && chmod 0755 /app/docker/entrypoint.sh
 
 ARG SOURCE_TREE=unknown
 LABEL org.opencontainers.image.revision="${SOURCE_TREE}"

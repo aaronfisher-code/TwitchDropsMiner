@@ -93,6 +93,8 @@ For automatic updates, commit and push all of this project's real Docker, WebUI,
 
 The Jenkins agent must run on Windows with Git, Docker, and the Docker Compose plugin available in `PATH`, and its service account must be permitted to access Docker. The pipeline builds a Linux image, so Docker Desktop or Docker Engine on the Windows host must be configured to run Linux containers. Deployment fingerprints are stored as Docker labels so source or Jenkins parameter changes trigger a replacement while unchanged healthy deployments are left running.
 
+For a manual Windows deployment without Jenkins, run `deploy-docker-windows.bat`. It clones or refreshes the `aaronfisher-code/TwitchDropsMiner` fork in a managed deployment directory, merges parent updates, builds the Linux image, replaces the container, and waits for it to become healthy. The two interfaces bind to localhost by default. Passwords and other settings can be supplied as environment variables before launching it, for example `set WEBUI_PASSWORD=...`, `set VNC_PASSWORD=...`, then `deploy-docker-windows.bat`.
+
 The defaults publish the dashboard and noVNC only on `127.0.0.1`. For access from another machine, prefer an authenticated HTTPS reverse proxy or an SSH tunnel such as `ssh -L 18473:127.0.0.1:18473 -L 6080:127.0.0.1:6080 your-server`.
 
 ### Support

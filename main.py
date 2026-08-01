@@ -205,13 +205,20 @@ if __name__ == "__main__":
         client.gui.close_window()
         sys.exit(exit_status)
 
+    file = None
     try:
         # use lock_file to check if we're not already running
         success, file = lock_file(LOCK_PATH)
         if not success:
             # already running - exit
+            print(
+                f"Unable to acquire the application data lock at {LOCK_PATH}. "
+                "Another miner instance may be using the same data volume.",
+                file=sys.stderr,
+            )
             sys.exit(3)
 
         asyncio.run(main())
     finally:
-        file.close()
+        if file is not None:
+            file.close()

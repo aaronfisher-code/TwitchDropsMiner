@@ -1,0 +1,6 @@
+# Linux container scripts must retain Unix line endings when cloned on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+# Keep native Windows launchers convenient when checked out locally.
+*.bat text eol=crlf

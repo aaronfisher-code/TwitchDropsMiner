@@ -79,7 +79,21 @@ desktop_pids="${desktop_pids} $!"
 
 python /app/main.py "$@" &
 app_pid=$!
+set +e
 wait "${app_pid}"
 app_status=$?
+set -e
 app_pid=""
+if [ "${app_status}" -ne 0 ]; then
+    echo "Twitch Drops Miner exited with status ${app_status}." >&2
+    if [ "${app_status}" -eq 3 ]; then
+        echo "The application data lock could not be acquired; check for another container using /data." >&2
+    fi
+    for service_log in /tmp/openbox.log /tmp/x11vnc.log /tmp/websockify.log; do
+        if [ -s "${service_log}" ]; then
+            echo "--- ${service_log} ---" >&2
+            tail -n 50 "${service_log}" >&2
+        fi
+    done
+fi
 exit "${app_status}"
