@@ -130,17 +130,27 @@
       line-height: 1.25;
       overflow-wrap: anywhere;
     }
+    .current-drop-layout {
+      display: grid;
+      grid-template-columns: 166px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin-top: 14px;
+    }
+    #drop-benefits { margin-top: 0; }
     #drop-benefits .benefit-card { width: 166px; padding: 9px; }
     #drop-benefits .benefit-name { font-size: 12px; }
+    #drop-benefits:empty + .current-drop-details { grid-column: 1 / -1; }
+    .current-drop-details > .progress-row:first-child { margin-top: 0; }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
     .fact { background: var(--surface-2); border-radius: 8px; padding: 10px; }
     .fact span { display: block; color: var(--muted); font-size: 12px; }
     .campaign-list { display: grid; gap: 10px; max-height: 650px; overflow: auto; padding-right: 3px; }
     .campaign { padding: 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
-    .campaign-body { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+    .campaign-body { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; }
     .campaign-cover {
-      width: 72px;
-      height: 96px;
+      width: 52px;
+      height: 69px;
       object-fit: cover;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -152,39 +162,84 @@
     .campaign-state { color: var(--muted); font-size: 12px; }
     .campaign-state.active { color: var(--green); }
     .campaign-drop-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-      gap: 8px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
       margin-top: 10px;
+      padding: 1px 1px 5px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
     }
     .campaign-drop-card {
-      min-width: 0;
-      padding: 7px;
+      position: relative;
+      flex: 0 0 80px;
+      min-width: 80px;
+      padding: 6px;
       border: 1px solid var(--border);
       border-radius: 9px;
       background: #101217;
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+      scroll-snap-align: start;
+    }
+    .campaign-drop-card:hover, .campaign-drop-card:focus-visible, .campaign-drop-card.selected {
+      border-color: var(--purple-2);
+      outline: none;
+      background: #17131f;
     }
     .campaign-drop-card.claimed { border-color: color-mix(in srgb, var(--green) 55%, var(--border)); }
-    .campaign-drop-main { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; }
-    .campaign-drop-main.no-image { grid-template-columns: 1fr; }
+    .campaign-drop-card.claimed.selected { border-color: var(--green); }
+    .campaign-drop-number {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      display: grid;
+      place-items: center;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: rgb(9 10 13 / 88%);
+      color: var(--text);
+      font-size: 9px;
+      font-weight: 700;
+    }
     .campaign-drop-image {
       display: block;
-      width: 56px;
-      height: 56px;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto;
       object-fit: contain;
       border-radius: 6px;
       background: #090a0d;
     }
-    .campaign-drop-details { min-width: 0; }
-    .campaign-drop-name {
-      font-size: 11px;
-      line-height: 1.25;
-      overflow-wrap: anywhere;
+    .campaign-drop-percent {
+      display: block;
+      margin-top: 4px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .campaign-drop-state { margin-top: 5px; color: var(--muted); font-size: 10px; }
-    .campaign-drop-card.claimed .campaign-drop-state { color: var(--green); }
-    .campaign-drop-card .progress { height: 7px; margin-top: 7px; }
+    .campaign-drop-card.claimed .campaign-drop-percent { color: var(--green); }
+    .campaign-drop-card .progress { height: 6px; margin-top: 4px; }
     .campaign-drop-card.claimed .progress > span { background: var(--green); }
+    .campaign-drop-detail {
+      min-height: 31px;
+      margin-top: 6px;
+      padding: 7px 9px;
+      border-radius: 7px;
+      background: #16181e;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .campaign-drop-detail strong { color: var(--text); }
+    .campaign-drop-detail:empty { display: none; }
     .logs {
       height: 360px;
       overflow: auto;
@@ -224,8 +279,34 @@
       .shell { padding: 16px; }
       header { align-items: flex-start; flex-direction: column; }
       .metrics { grid-template-columns: 1fr 1fr; }
-      .facts { grid-template-columns: 1fr; }
+      .current-drop-layout { grid-template-columns: 116px minmax(0, 1fr); gap: 12px; }
+      #drop-benefits .benefit-card { width: 116px; padding: 7px; }
+      #drop-benefits .benefit-name { font-size: 10px; }
+      .current-drop-details .progress-row { font-size: 12px; }
+      .current-drop-details .facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .current-drop-details .fact:first-child { grid-column: 1 / -1; }
+      .current-drop-details .fact { padding: 7px 8px; font-size: 12px; }
+      .current-drop-details .fact span { font-size: 10px; }
+      .campaign { padding: 10px; }
+      .campaign-title { font-size: 13px; }
+      .campaign-state { font-size: 11px; }
       .checks { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 420px) {
+      .shell { padding: 10px; }
+      .panel { padding: 13px; }
+      .current-drop-layout { grid-template-columns: 96px minmax(0, 1fr); gap: 10px; }
+      #drop-benefits .benefit-card { width: 96px; padding: 6px; }
+      .campaign-body { grid-template-columns: 44px minmax(0, 1fr); gap: 8px; }
+      .campaign-cover { width: 44px; height: 59px; }
+    }
+    @media (max-width: 350px) {
+      .current-drop-details .facts { grid-template-columns: 1fr; }
+      .current-drop-details .fact:first-child { grid-column: auto; }
     }
   </style>
 </head>
@@ -265,15 +346,19 @@
             </div>
             <div id="drop-game" class="badge">Idle</div>
           </div>
-          <div id="drop-benefits" class="benefit-list"></div>
-          <div class="progress-row"><span>Drop progress</span><strong id="drop-percent">0%</strong></div>
-          <div class="progress"><span id="drop-bar"></span></div>
-          <div class="progress-row"><span>Campaign progress</span><strong id="campaign-percent">0%</strong></div>
-          <div class="progress"><span id="campaign-bar"></span></div>
-          <div class="facts">
-            <div class="fact"><span>Drop time</span><strong id="drop-time">—</strong></div>
-            <div class="fact"><span>Campaign drops</span><strong id="campaign-drops">—</strong></div>
-            <div class="fact"><span>Campaign remaining</span><strong id="campaign-time">—</strong></div>
+          <div class="current-drop-layout">
+            <div id="drop-benefits" class="benefit-list"></div>
+            <div class="current-drop-details">
+              <div class="progress-row"><span>Drop progress</span><strong id="drop-percent">0%</strong></div>
+              <div class="progress"><span id="drop-bar"></span></div>
+              <div class="progress-row"><span>Campaign progress</span><strong id="campaign-percent">0%</strong></div>
+              <div class="progress"><span id="campaign-bar"></span></div>
+              <div class="facts">
+                <div class="fact"><span>Drop time</span><strong id="drop-time">—</strong></div>
+                <div class="fact"><span>Campaign drops</span><strong id="campaign-drops">—</strong></div>
+                <div class="fact"><span>Campaign remaining</span><strong id="campaign-time">—</strong></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -326,6 +411,8 @@
     const byId = (id) => document.getElementById(id);
     let settingsDirty = false;
     let firstSettingsLoad = true;
+    const selectedCampaignDrops = new Map();
+    const campaignDropScroll = new Map();
 
     async function api(path, options = {}) {
       const response = await fetch(path, {cache: 'no-store', ...options});
@@ -378,14 +465,57 @@
       }
     }
 
-    function appendCampaignDrops(root, drops) {
+    function dropState(drop) {
+      return drop.claimed
+        ? 'Claimed'
+        : drop.can_claim
+          ? 'Ready to claim'
+          : drop.progress > 0 ? 'In progress' : 'Not started';
+    }
+
+    function showCampaignDropDetail(root, drop, index) {
       root.replaceChildren();
-      for (const drop of drops || []) {
-        const card = document.createElement('div');
+      const benefitNames = (drop.benefits || []).map((benefit) => benefit.name).join(', ');
+      const name = document.createElement('strong');
+      name.textContent = `${index + 1}. ${benefitNames || drop.rewards || drop.name}`;
+      const detail = document.createElement('span');
+      detail.textContent = ` — ${dropState(drop)} · ${percent(drop.progress)} · ${drop.current_minutes}/${drop.required_minutes}m · ${duration(drop.remaining_minutes)} left`;
+      root.append(name, detail);
+    }
+
+    function appendCampaignDrops(root, detailRoot, drops, campaignId) {
+      root.replaceChildren();
+      const orderedDrops = [...(drops || [])].sort(
+        (left, right) => left.required_minutes - right.required_minutes
+      );
+      detailRoot.replaceChildren();
+      let selectedIndex = orderedDrops.findIndex(
+        (drop) => drop.id === selectedCampaignDrops.get(campaignId)
+      );
+      if (selectedIndex < 0) {
+        selectedIndex = orderedDrops.findIndex((drop) => !drop.claimed && drop.progress > 0);
+      }
+      if (selectedIndex < 0) selectedIndex = orderedDrops.findIndex((drop) => !drop.claimed);
+      if (selectedIndex < 0 && orderedDrops.length) selectedIndex = orderedDrops.length - 1;
+
+      const cards = [];
+      const selectDrop = (index) => {
+        for (const item of cards) item.classList.remove('selected');
+        cards[index].classList.add('selected');
+        selectedCampaignDrops.set(campaignId, orderedDrops[index].id);
+        showCampaignDropDetail(detailRoot, orderedDrops[index], index);
+      };
+
+      orderedDrops.forEach((drop, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
         card.className = `campaign-drop-card ${drop.claimed ? 'claimed' : ''}`;
-        card.title = `${drop.name} · ${drop.rewards}`;
-        const main = document.createElement('div');
-        main.className = 'campaign-drop-main';
+        card.title = `${index + 1}. ${drop.name} · ${drop.rewards} · ${dropState(drop)} · ${percent(drop.progress)}`;
+        card.setAttribute('aria-label', card.title);
+        const number = document.createElement('span');
+        number.className = 'campaign-drop-number';
+        number.textContent = index + 1;
+        card.append(number);
         const benefit = (drop.benefits || [])[0];
         if (benefit) {
           const image = document.createElement('img');
@@ -393,37 +523,30 @@
           image.src = benefit.image_url;
           image.alt = benefit.name;
           image.loading = 'lazy';
-          image.addEventListener('error', () => {
-            image.remove();
-            main.classList.add('no-image');
-          });
-          main.append(image);
-        } else {
-          main.classList.add('no-image');
+          image.addEventListener('error', () => { image.style.visibility = 'hidden'; });
+          card.append(image);
         }
-        const details = document.createElement('div');
-        details.className = 'campaign-drop-details';
-        const name = document.createElement('div');
-        name.className = 'campaign-drop-name';
-        name.textContent = benefit ? benefit.name : (drop.rewards || drop.name);
-        const state = document.createElement('div');
-        state.className = 'campaign-drop-state';
-        const progressState = drop.claimed
-          ? 'Claimed'
-          : drop.can_claim
-            ? 'Ready to claim'
-            : drop.progress > 0 ? 'In progress' : 'Not started';
-        state.textContent = `${progressState} · ${percent(drop.progress)} · ${drop.current_minutes}/${drop.required_minutes}m`;
-        details.append(name, state);
-        main.append(details);
+        const compactProgress = document.createElement('span');
+        compactProgress.className = 'campaign-drop-percent';
+        compactProgress.textContent = drop.claimed ? '✓ 100%' : drop.can_claim ? 'Ready' : percent(drop.progress);
         const progress = document.createElement('div');
         progress.className = 'progress';
         const fill = document.createElement('span');
         fill.style.width = `${Math.max(0, Math.min(1, drop.progress || 0)) * 100}%`;
         progress.append(fill);
-        card.append(main, progress);
+        card.append(compactProgress, progress);
+        card.addEventListener('mouseenter', () => selectDrop(index));
+        card.addEventListener('focus', () => selectDrop(index));
+        card.addEventListener('click', () => selectDrop(index));
+        cards.push(card);
         root.append(card);
-      }
+      });
+
+      root.scrollLeft = campaignDropScroll.get(campaignId) || 0;
+      root.addEventListener('scroll', () => {
+        campaignDropScroll.set(campaignId, root.scrollLeft);
+      }, {passive: true});
+      if (selectedIndex >= 0) selectDrop(selectedIndex);
     }
 
     function renderDrop(drop) {
@@ -502,12 +625,14 @@
         const fill = document.createElement('span');
         fill.style.width = `${Math.max(0, Math.min(1, campaign.progress || 0)) * 100}%`;
         progress.append(fill);
+        content.append(top, info, progress);
+        body.append(cover, content);
         const dropsRoot = document.createElement('div');
         dropsRoot.className = 'campaign-drop-list';
-        appendCampaignDrops(dropsRoot, campaign.drops);
-        content.append(top, info, progress, dropsRoot);
-        body.append(cover, content);
-        card.append(body);
+        const dropDetail = document.createElement('div');
+        dropDetail.className = 'campaign-drop-detail';
+        appendCampaignDrops(dropsRoot, dropDetail, campaign.drops, campaign.id);
+        card.append(body, dropsRoot, dropDetail);
         root.append(card);
       }
     }
