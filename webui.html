@@ -130,6 +130,8 @@
       line-height: 1.25;
       overflow-wrap: anywhere;
     }
+    #drop-benefits .benefit-card { width: 166px; padding: 9px; }
+    #drop-benefits .benefit-name { font-size: 12px; }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
     .fact { background: var(--surface-2); border-radius: 8px; padding: 10px; }
     .fact span { display: block; color: var(--muted); font-size: 12px; }
@@ -149,9 +151,40 @@
     .campaign-title { font-weight: 700; }
     .campaign-state { color: var(--muted); font-size: 12px; }
     .campaign-state.active { color: var(--green); }
-    .campaign .benefit-list { gap: 7px; margin-top: 10px; }
-    .campaign .benefit-card { width: 72px; padding: 5px; }
-    .campaign .benefit-name { font-size: 10px; }
+    .campaign-drop-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .campaign-drop-card {
+      min-width: 0;
+      padding: 7px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #101217;
+    }
+    .campaign-drop-card.claimed { border-color: color-mix(in srgb, var(--green) 55%, var(--border)); }
+    .campaign-drop-main { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; }
+    .campaign-drop-main.no-image { grid-template-columns: 1fr; }
+    .campaign-drop-image {
+      display: block;
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: #090a0d;
+    }
+    .campaign-drop-details { min-width: 0; }
+    .campaign-drop-name {
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+    .campaign-drop-state { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .campaign-drop-card.claimed .campaign-drop-state { color: var(--green); }
+    .campaign-drop-card .progress { height: 7px; margin-top: 7px; }
+    .campaign-drop-card.claimed .progress > span { background: var(--green); }
     .logs {
       height: 360px;
       overflow: auto;
@@ -345,6 +378,54 @@
       }
     }
 
+    function appendCampaignDrops(root, drops) {
+      root.replaceChildren();
+      for (const drop of drops || []) {
+        const card = document.createElement('div');
+        card.className = `campaign-drop-card ${drop.claimed ? 'claimed' : ''}`;
+        card.title = `${drop.name} · ${drop.rewards}`;
+        const main = document.createElement('div');
+        main.className = 'campaign-drop-main';
+        const benefit = (drop.benefits || [])[0];
+        if (benefit) {
+          const image = document.createElement('img');
+          image.className = 'campaign-drop-image';
+          image.src = benefit.image_url;
+          image.alt = benefit.name;
+          image.loading = 'lazy';
+          image.addEventListener('error', () => {
+            image.remove();
+            main.classList.add('no-image');
+          });
+          main.append(image);
+        } else {
+          main.classList.add('no-image');
+        }
+        const details = document.createElement('div');
+        details.className = 'campaign-drop-details';
+        const name = document.createElement('div');
+        name.className = 'campaign-drop-name';
+        name.textContent = benefit ? benefit.name : (drop.rewards || drop.name);
+        const state = document.createElement('div');
+        state.className = 'campaign-drop-state';
+        const progressState = drop.claimed
+          ? 'Claimed'
+          : drop.can_claim
+            ? 'Ready to claim'
+            : drop.progress > 0 ? 'In progress' : 'Not started';
+        state.textContent = `${progressState} · ${percent(drop.progress)} · ${drop.current_minutes}/${drop.required_minutes}m`;
+        details.append(name, state);
+        main.append(details);
+        const progress = document.createElement('div');
+        progress.className = 'progress';
+        const fill = document.createElement('span');
+        fill.style.width = `${Math.max(0, Math.min(1, drop.progress || 0)) * 100}%`;
+        progress.append(fill);
+        card.append(main, progress);
+        root.append(card);
+      }
+    }
+
     function renderDrop(drop) {
       if (!drop) {
         text('drop-name', 'No active drop');
@@ -421,20 +502,10 @@
         const fill = document.createElement('span');
         fill.style.width = `${Math.max(0, Math.min(1, campaign.progress || 0)) * 100}%`;
         progress.append(fill);
-        const benefitsRoot = document.createElement('div');
-        benefitsRoot.className = 'benefit-list';
-        const benefits = [];
-        const benefitIds = new Set();
-        for (const drop of campaign.drops || []) {
-          for (const benefit of drop.benefits || []) {
-            if (!benefitIds.has(benefit.id)) {
-              benefitIds.add(benefit.id);
-              benefits.push(benefit);
-            }
-          }
-        }
-        appendBenefits(benefitsRoot, benefits, 12);
-        content.append(top, info, progress, benefitsRoot);
+        const dropsRoot = document.createElement('div');
+        dropsRoot.className = 'campaign-drop-list';
+        appendCampaignDrops(dropsRoot, campaign.drops);
+        content.append(top, info, progress, dropsRoot);
         body.append(cover, content);
         card.append(body);
         root.append(card);
