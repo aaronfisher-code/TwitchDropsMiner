@@ -1972,6 +1972,22 @@ class SettingsPanel:
         self.update_excluded_choices()
         self.update_priority_choices()
 
+    def sync_from_settings(self) -> None:
+        """Refresh desktop controls after settings are changed externally."""
+        self._vars["dark_mode"].set(int(self._settings.dark_mode))
+        self._vars["priority_mode"].set(self.PRIORITY_MODES[self._settings.priority_mode])
+        self._vars["tray_notifications"].set(int(self._settings.tray_notifications))
+        self._vars["enable_badges_emotes"].set(int(self._settings.enable_badges_emotes))
+        self._vars["available_drops_check"].set(
+            int(self._settings.available_drops_check)
+        )
+        self._priority_list.delete(0, "end")
+        self._priority_list.insert("end", *self._settings.priority)
+        self._exclude_list.delete(0, "end")
+        self._exclude_list.insert("end", *sorted(self._settings.exclude))
+        self.update_excluded_choices()
+        self.update_priority_choices()
+
     def priority_add(self) -> None:
         game_name: str = self._priority_entry.get()
         if not game_name:
@@ -2477,6 +2493,7 @@ class GUIManager:
         self.tray.update_title(None)
 
     def print(self, message: str):
+        self._twitch.webui.add_message(message)
         # print to our custom output
         self.output.print(message)
 

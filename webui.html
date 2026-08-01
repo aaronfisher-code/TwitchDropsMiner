@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Twitch Drops Miner Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0e0f13;
+      --surface: #181a20;
+      --surface-2: #22252d;
+      --border: #30343d;
+      --text: #f2f3f5;
+      --muted: #a3a8b3;
+      --purple: #9147ff;
+      --purple-2: #b98cff;
+      --green: #43d17d;
+      --yellow: #f4c95d;
+      --red: #ff6b6b;
+      --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #211638 0, var(--bg) 35rem);
+      color: var(--text);
+      font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    a { color: var(--purple-2); }
+    .shell { max-width: 1480px; margin: 0 auto; padding: 24px; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 4px; font-size: clamp(22px, 3vw, 34px); }
+    h2 { font-size: 17px; margin-bottom: 16px; }
+    .muted { color: var(--muted); }
+    .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 9px 13px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .button:hover { border-color: var(--purple); }
+    .button.primary { background: var(--purple); border-color: var(--purple); }
+    .button:disabled { opacity: .55; cursor: wait; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-weight: 650;
+    }
+    .badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+    .badge.good::before { background: var(--green); box-shadow: 0 0 9px var(--green); }
+    .badge.bad::before { background: var(--red); box-shadow: 0 0 9px var(--red); }
+    .alert {
+      display: none;
+      margin-bottom: 18px;
+      border: 1px solid #7e3434;
+      background: #351b1d;
+      color: #ffc7c7;
+      padding: 12px 14px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .metric, .panel {
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 34px rgb(0 0 0 / 18%);
+    }
+    .metric { padding: 15px; min-width: 0; }
+    .metric .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    .metric .value { font-size: 19px; font-weight: 700; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr); gap: 12px; }
+    .stack { display: grid; gap: 12px; align-content: start; }
+    .panel { padding: 18px; min-width: 0; }
+    .panel-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+    .progress-row { display: flex; justify-content: space-between; gap: 12px; margin: 12px 0 6px; }
+    .progress {
+      height: 11px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #0a0b0e;
+      border: 1px solid var(--border);
+    }
+    .progress > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), #d25cff); transition: width .35s ease; }
+    .drop-name { font-size: 20px; font-weight: 750; }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+    .fact { background: var(--surface-2); border-radius: 8px; padding: 10px; }
+    .fact span { display: block; color: var(--muted); font-size: 12px; }
+    .campaign-list { display: grid; gap: 10px; max-height: 650px; overflow: auto; padding-right: 3px; }
+    .campaign { padding: 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+    .campaign-top { display: flex; justify-content: space-between; gap: 10px; }
+    .campaign-title { font-weight: 700; }
+    .campaign-state { color: var(--muted); font-size: 12px; }
+    .campaign-state.active { color: var(--green); }
+    .logs {
+      height: 360px;
+      overflow: auto;
+      background: #090a0d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .log-entry { border-bottom: 1px solid #1e2026; padding: 4px 0; }
+    .log-entry.WARNING { color: var(--yellow); }
+    .log-entry.ERROR, .log-entry.CRITICAL { color: var(--red); }
+    .log-meta { color: #777e89; }
+    form { display: grid; gap: 13px; }
+    label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    textarea, select, input[type="number"] {
+      display: block;
+      width: 100%;
+      margin-top: 5px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      background: #101217;
+      padding: 9px;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+    .check { display: flex; gap: 8px; align-items: center; color: var(--text); font-size: 13px; font-weight: 400; }
+    .form-status { min-height: 20px; color: var(--muted); }
+    @media (max-width: 1050px) {
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 650px) {
+      .shell { padding: 16px; }
+      header { align-items: flex-start; flex-direction: column; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .facts { grid-template-columns: 1fr; }
+      .checks { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>Twitch Drops Miner</h1>
+        <div class="muted">Live container dashboard · <span id="last-update">Connecting…</span></div>
+      </div>
+      <div class="actions">
+        <span id="health" class="badge">Connecting</span>
+        <a id="desktop-link" class="button" href="#" target="_blank" rel="noreferrer">Desktop login</a>
+        <button id="reload" class="button">Reload inventory</button>
+      </div>
+    </header>
+
+    <div id="alert" class="alert"></div>
+
+    <section class="metrics">
+      <div class="metric"><div class="label">Miner state</div><div id="state" class="value">—</div></div>
+      <div class="metric"><div class="label">Account</div><div id="account" class="value">—</div></div>
+      <div class="metric"><div class="label">Watching</div><div id="watching" class="value">—</div></div>
+      <div class="metric"><div class="label">Websockets</div><div id="sockets" class="value">—</div></div>
+      <div class="metric"><div class="label">Channels online</div><div id="channels" class="value">—</div></div>
+      <div class="metric"><div class="label">Mining activity</div><div id="activity" class="value">—</div></div>
+    </section>
+
+    <main class="grid">
+      <div class="stack">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Current drop</h2>
+              <div id="drop-name" class="drop-name">No active drop</div>
+              <div id="drop-reward" class="muted">Waiting for an eligible campaign and channel.</div>
+            </div>
+            <div id="drop-game" class="badge">Idle</div>
+          </div>
+          <div class="progress-row"><span>Drop progress</span><strong id="drop-percent">0%</strong></div>
+          <div class="progress"><span id="drop-bar"></span></div>
+          <div class="progress-row"><span>Campaign progress</span><strong id="campaign-percent">0%</strong></div>
+          <div class="progress"><span id="campaign-bar"></span></div>
+          <div class="facts">
+            <div class="fact"><span>Drop time</span><strong id="drop-time">—</strong></div>
+            <div class="fact"><span>Campaign drops</span><strong id="campaign-drops">—</strong></div>
+            <div class="fact"><span>Campaign remaining</span><strong id="campaign-time">—</strong></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Campaigns</h2><span id="campaign-count" class="muted"></span></div>
+          <div id="campaigns" class="campaign-list"><span class="muted">No campaigns loaded.</span></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Recent output and errors</h2><span class="muted">Newest at bottom</span></div>
+          <div id="logs" class="logs">Waiting for output…</div>
+        </section>
+      </div>
+
+      <aside class="stack">
+        <section class="panel">
+          <h2>Settings</h2>
+          <p class="muted">Saving restarts the mining session so every change is applied.</p>
+          <form id="settings-form">
+            <label>Priority games, one per line
+              <textarea id="priority" spellcheck="false"></textarea>
+            </label>
+            <label>Excluded games, one per line
+              <textarea id="exclude" spellcheck="false"></textarea>
+            </label>
+            <label>Priority mode
+              <select id="priority-mode"></select>
+            </label>
+            <label>Connection quality / timeout multiplier
+              <input id="connection-quality" type="number" min="1" max="6" step="1">
+            </label>
+            <div class="checks">
+              <label class="check"><input id="dark-mode" type="checkbox"> Dark desktop theme</label>
+              <label class="check"><input id="tray-notifications" type="checkbox"> Tray notifications</label>
+              <label class="check"><input id="badges-emotes" type="checkbox"> Include badges/emotes</label>
+              <label class="check"><input id="drops-check" type="checkbox"> Verify channel drops</label>
+            </div>
+            <div id="settings-detail" class="muted"></div>
+            <div class="actions">
+              <button id="save-settings" class="button primary" type="submit">Save and restart</button>
+              <span id="form-status" class="form-status"></span>
+            </div>
+          </form>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+    let settingsDirty = false;
+    let firstSettingsLoad = true;
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {cache: 'no-store', ...options});
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `Request failed (${response.status})`);
+      }
+      return response.json();
+    }
+
+    function text(id, value) { byId(id).textContent = value ?? '—'; }
+    function percent(value) { return `${Math.round((Number(value) || 0) * 1000) / 10}%`; }
+    function duration(minutes) {
+      if (minutes === null || minutes === undefined) return '—';
+      const value = Math.max(0, Math.round(minutes));
+      const hours = Math.floor(value / 60);
+      const mins = value % 60;
+      return hours ? `${hours}h ${mins}m` : `${mins}m`;
+    }
+    function setBar(id, value) {
+      byId(id).style.width = `${Math.max(0, Math.min(1, Number(value) || 0)) * 100}%`;
+    }
+    function lines(value) {
+      return value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    }
+    function relative(timestamp) {
+      if (!timestamp) return 'Never';
+      const seconds = Math.max(0, Math.round((Date.now() - new Date(timestamp).getTime()) / 1000));
+      if (seconds < 60) return `${seconds}s ago`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      return `${Math.floor(seconds / 3600)}h ago`;
+    }
+
+    function renderDrop(drop) {
+      if (!drop) {
+        text('drop-name', 'No active drop');
+        text('drop-reward', 'Waiting for an eligible campaign and channel.');
+        text('drop-game', 'Idle');
+        text('drop-percent', '0%');
+        text('campaign-percent', '0%');
+        text('drop-time', '—');
+        text('campaign-drops', '—');
+        text('campaign-time', '—');
+        setBar('drop-bar', 0);
+        setBar('campaign-bar', 0);
+        return;
+      }
+      text('drop-name', drop.name || drop.campaign);
+      text('drop-reward', drop.rewards);
+      text('drop-game', drop.game);
+      text('drop-percent', percent(drop.progress));
+      text('campaign-percent', percent(drop.campaign_progress));
+      text('drop-time', `${drop.current_minutes}/${drop.required_minutes}m · ${duration(drop.remaining_minutes)} left`);
+      text('campaign-drops', `${drop.campaign_claimed}/${drop.campaign_total} claimed`);
+      text('campaign-time', duration(drop.campaign_remaining_minutes));
+      setBar('drop-bar', drop.progress);
+      setBar('campaign-bar', drop.campaign_progress);
+    }
+
+    function renderCampaigns(campaigns) {
+      const root = byId('campaigns');
+      root.replaceChildren();
+      text('campaign-count', `${campaigns.length} loaded`);
+      if (!campaigns.length) {
+        const empty = document.createElement('span');
+        empty.className = 'muted';
+        empty.textContent = 'No campaigns loaded.';
+        root.append(empty);
+        return;
+      }
+      for (const campaign of campaigns) {
+        const card = document.createElement('div');
+        card.className = 'campaign';
+        const top = document.createElement('div');
+        top.className = 'campaign-top';
+        const title = document.createElement('div');
+        title.className = 'campaign-title';
+        title.textContent = `${campaign.game} · ${campaign.name}`;
+        const state = document.createElement('div');
+        const stateName = campaign.active ? 'Active' : campaign.upcoming ? 'Upcoming' : 'Expired';
+        state.className = `campaign-state ${campaign.active ? 'active' : ''}`;
+        state.textContent = `${stateName}${campaign.linked ? '' : ' · Not linked'}`;
+        top.append(title, state);
+        const info = document.createElement('div');
+        info.className = 'progress-row';
+        const left = document.createElement('span');
+        left.textContent = `${campaign.claimed_drops}/${campaign.total_drops} claimed · ${duration(campaign.remaining_minutes)} left`;
+        const right = document.createElement('strong');
+        right.textContent = percent(campaign.progress);
+        info.append(left, right);
+        const progress = document.createElement('div');
+        progress.className = 'progress';
+        const fill = document.createElement('span');
+        fill.style.width = `${Math.max(0, Math.min(1, campaign.progress || 0)) * 100}%`;
+        progress.append(fill);
+        card.append(top, info, progress);
+        root.append(card);
+      }
+    }
+
+    function renderLogs(events) {
+      const root = byId('logs');
+      const nearBottom = root.scrollHeight - root.scrollTop - root.clientHeight < 80;
+      root.replaceChildren();
+      if (!events.length) {
+        root.textContent = 'No output recorded yet.';
+        return;
+      }
+      for (const event of events) {
+        const row = document.createElement('div');
+        row.className = `log-entry ${event.level}`;
+        const meta = document.createElement('span');
+        meta.className = 'log-meta';
+        const stamp = new Date(event.timestamp).toLocaleTimeString();
+        meta.textContent = `${stamp} [${event.level}/${event.source}] `;
+        const message = document.createElement('span');
+        message.textContent = event.message;
+        row.append(meta, message);
+        root.append(row);
+      }
+      if (nearBottom) root.scrollTop = root.scrollHeight;
+    }
+
+    function renderSettings(settings) {
+      if (settingsDirty && !firstSettingsLoad) return;
+      byId('priority').value = settings.priority.join('\n');
+      byId('exclude').value = settings.exclude.join('\n');
+      const select = byId('priority-mode');
+      select.replaceChildren();
+      for (const mode of settings.priority_modes) {
+        const option = document.createElement('option');
+        option.value = mode;
+        option.textContent = mode.replaceAll('_', ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase());
+        option.selected = mode === settings.priority_mode;
+        select.append(option);
+      }
+      byId('connection-quality').value = settings.connection_quality;
+      byId('dark-mode').checked = settings.dark_mode;
+      byId('tray-notifications').checked = settings.tray_notifications;
+      byId('badges-emotes').checked = settings.enable_badges_emotes;
+      byId('drops-check').checked = settings.available_drops_check;
+      text('settings-detail', `Language: ${settings.language} · Proxy: ${settings.proxy_configured ? 'configured' : 'not configured'}`);
+      firstSettingsLoad = false;
+      settingsDirty = false;
+    }
+
+    function render(data) {
+      text('last-update', `Updated ${new Date(data.timestamp).toLocaleTimeString()} · uptime ${duration(data.uptime_seconds / 60)}`);
+      const health = byId('health');
+      health.textContent = data.healthy ? 'Runtime healthy' : 'Runtime error';
+      health.className = `badge ${data.healthy ? 'good' : 'bad'}`;
+      text('state', data.desktop_status || data.state.replaceAll('_', ' '));
+      text('account', data.logged_in ? `Logged in · ${data.user_id}` : 'Login required');
+      text('watching', data.watching ? `${data.watching.name} · ${data.watching.game || 'Unknown game'}` : 'Not watching');
+      text('sockets', `${data.websockets.connected}/${data.websockets.total} · ${data.websockets.topics} topics`);
+      text('channels', `${data.channels.online}/${data.channels.total}`);
+      if (data.activity.last_watch_at) {
+        text('activity', `${data.activity.last_watch_success ? 'Watch sent' : 'Watch failed'} · ${relative(data.activity.last_watch_at)}`);
+      } else if (data.activity.last_progress_at) {
+        text('activity', `Progress · ${relative(data.activity.last_progress_at)}`);
+      } else {
+        text('activity', 'No payload yet');
+      }
+      byId('desktop-link').href = `${location.protocol}//${location.hostname}:${data.novnc_port}/vnc.html`;
+
+      const alert = byId('alert');
+      if (data.fatal_error) {
+        alert.textContent = data.fatal_error;
+        alert.style.display = 'block';
+      } else {
+        alert.style.display = 'none';
+      }
+      renderDrop(data.active_drop);
+      renderCampaigns(data.campaigns);
+      renderLogs(data.events);
+      renderSettings(data.settings);
+    }
+
+    async function refresh() {
+      try {
+        render(await api('/api/status'));
+      } catch (error) {
+        const health = byId('health');
+        health.textContent = 'Dashboard disconnected';
+        health.className = 'badge bad';
+        text('last-update', error.message);
+      }
+    }
+
+    byId('settings-form').addEventListener('input', () => { settingsDirty = true; });
+    byId('settings-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = byId('save-settings');
+      const status = byId('form-status');
+      button.disabled = true;
+      status.textContent = 'Saving…';
+      try {
+        await api('/api/settings', {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            priority: lines(byId('priority').value),
+            exclude: lines(byId('exclude').value),
+            priority_mode: byId('priority-mode').value,
+            connection_quality: Number(byId('connection-quality').value),
+            dark_mode: byId('dark-mode').checked,
+            tray_notifications: byId('tray-notifications').checked,
+            enable_badges_emotes: byId('badges-emotes').checked,
+            available_drops_check: byId('drops-check').checked
+          })
+        });
+        settingsDirty = false;
+        status.textContent = 'Saved; miner restarting.';
+        await refresh();
+      } catch (error) {
+        status.textContent = `Error: ${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    byId('reload').addEventListener('click', async () => {
+      const button = byId('reload');
+      button.disabled = true;
+      try {
+        await api('/api/actions/reload', {method: 'POST'});
+        button.textContent = 'Reload requested';
+      } catch (error) {
+        button.textContent = `Failed: ${error.message}`;
+      } finally {
+        setTimeout(() => { button.disabled = false; button.textContent = 'Reload inventory'; }, 1800);
+      }
+    });
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

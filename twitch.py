@@ -17,6 +17,7 @@ from yarl import URL
 
 from translate import _
 from gui import GUIManager
+from webui import WebUI
 from channel import Channel
 from websocket import WebsocketPool
 from inventory import DropsCampaign
@@ -448,6 +449,8 @@ class Twitch:
         self._client_type: ClientInfo = ClientType.ANDROID_APP
         self._session: aiohttp.ClientSession | None = None
         self._auth_state: _AuthState = _AuthState(self)
+        # Web dashboard (created before the GUI so GUI output can be captured)
+        self.webui = WebUI(self)
         # GUI
         self.gui = GUIManager(self)
         # Storing and watching channels
@@ -902,6 +905,7 @@ class Twitch:
                 continue
             # logger.log(CALL, f"Sending watch payload to: {channel.name}")
             succeeded: bool = await channel.send_watch()
+            self.webui.record_watch(succeeded)
             last_sent: float = time()
             if not succeeded:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")

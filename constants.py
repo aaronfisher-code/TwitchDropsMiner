@@ -53,7 +53,7 @@ def _resource_path(relative_path: Path | str) -> Path:
         meipass: str = getattr(sys, "_MEIPASS")
         base_path = Path(meipass)
     else:
-        base_path = WORKING_DIR
+        base_path = APP_DIR
     return base_path.joinpath(relative_path)
 
 
@@ -91,7 +91,11 @@ else:
     SELF_PATH = Path(sys.argv[0]).resolve()
     if SELF_PATH.stem == "pyinstaller" or SELF_PATH.name == "gui.py":
         SELF_PATH = Path(__file__).with_name("main.py").resolve()
-WORKING_DIR = SELF_PATH.parent
+APP_DIR = SELF_PATH.parent
+# Keep mutable state outside of the application directory when requested. This
+# lets container images remain immutable while cookies, settings, logs, and the
+# image cache live on a persistent volume.
+WORKING_DIR = Path(os.environ.get("TDM_DATA_DIR", APP_DIR)).expanduser().resolve()
 # Development paths
 VENV_PATH = Path(WORKING_DIR, "env")
 SITE_PACKAGES_PATH = Path(VENV_PATH, SYS_SITE_PACKAGES)

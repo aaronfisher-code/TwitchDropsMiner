@@ -295,6 +295,7 @@ class TimedDrop(BaseDrop):
         )
 
     def _on_state_changed(self) -> None:
+        self._twitch.webui.record_progress()
         self._twitch.gui.inv.update_drop(self)
 
     def _update_real_minutes(self, delta: int) -> None:

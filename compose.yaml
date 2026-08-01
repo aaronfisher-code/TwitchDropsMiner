@@ -1,0 +1,35 @@
+services:
+  twitch-drops-miner:
+    build:
+      context: .
+      args:
+        TDM_UID: "${TDM_UID:-1000}"
+        TDM_GID: "${TDM_GID:-1000}"
+        SOURCE_TREE: "${SOURCE_TREE:-unknown}"
+    image: twitch-drops-miner:local
+    container_name: twitch-drops-miner
+    labels:
+      com.tdm.deployment: "${DEPLOYMENT_FINGERPRINT:-unknown}"
+      com.tdm.source-tree: "${SOURCE_TREE:-unknown}"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      DISPLAY_WIDTH: "${DISPLAY_WIDTH:-1280}"
+      DISPLAY_HEIGHT: "${DISPLAY_HEIGHT:-800}"
+      TZ: "${TZ:-UTC}"
+      VNC_PASSWORD: "${VNC_PASSWORD:-}"
+      TDM_WEBUI_HOST: "0.0.0.0"
+      TDM_WEBUI_PORT: "18473"
+      TDM_WEBUI_USERNAME: "${WEBUI_USERNAME:-admin}"
+      TDM_WEBUI_PASSWORD: "${WEBUI_PASSWORD:-}"
+      TDM_NOVNC_PORT: "${TDM_WEB_PORT:-6080}"
+    ports:
+      - "${TDM_BIND_ADDRESS:-127.0.0.1}:${TDM_WEB_PORT:-6080}:6080"
+      - "${TDM_BIND_ADDRESS:-127.0.0.1}:${TDM_WEBUI_PORT:-18473}:18473"
+    volumes:
+      - twitch-drops-data:/data
+    shm_size: 256mb
+
+volumes:
+  twitch-drops-data:
+    name: twitch-drops-data

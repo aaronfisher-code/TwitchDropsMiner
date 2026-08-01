@@ -76,6 +76,25 @@ Every several seconds, the application pretends to watch a particular stream by 
 
 If you'd be interested in running the latest master from source or building your own executable, see the wiki page explaining how to do so: https://github.com/DevilXD/TwitchDropsMiner/wiki/Setting-up-the-environment,-building-and-running
 
+### Docker and Jenkins deployment (unofficial):
+
+The container provides two browser interfaces:
+
+- The dashboard at `http://localhost:18473` shows live miner health, the watched channel, drop and campaign progress, websocket/channel counts, recent output and errors, and a safe subset of editable settings.
+- The noVNC desktop at `http://localhost:6080/vnc.html` provides the original GUI. It is still required for the initial Twitch login, authentication problems, and advanced desktop-only actions.
+
+1. Copy `.env.example` to `.env`, then change `VNC_PASSWORD`, `WEBUI_PASSWORD`, `TZ`, and any desired port or display settings. Both web interfaces bind to localhost by default; set `TDM_BIND_ADDRESS` only when they are protected by a firewall or authenticated HTTPS reverse proxy. The `.env` file is excluded from Git and the Docker build context.
+2. Run `docker compose up --detach --build`.
+3. Open the noVNC desktop once to log in to Twitch, then use `http://localhost:18473` for routine monitoring and settings.
+
+Cookies, settings, logs, and cached images are stored in the `twitch-drops-data` Docker volume. Rebuilding or replacing the container does not remove this volume. Treat it as sensitive because it contains the Twitch session cookie. To stop the app without deleting its state, run `docker compose down` (do not add `--volumes`).
+
+For automatic updates, commit and push all of this project's real Docker, WebUI, and Python files to your fork. Create a regular Jenkins **Pipeline** job, paste the included `Jenkinsfile` into its **Pipeline script** field, and set the `FORK_REPOSITORY_URL` build parameter to your fork's HTTPS clone URL. Every run starts with a clean `git clone` of the selected fork branch, merges the latest parent [DevilXD/TwitchDropsMiner repository](https://github.com/DevilXD/TwitchDropsMiner) branch into that disposable checkout, validates the required files, and builds/redeploys it with Docker Compose. The merge is used for the deployment but is not pushed back to your fork. A conflict fails safely and must be resolved in the fork.
+
+The Jenkins agent must run on Windows with Git, Docker, and the Docker Compose plugin available in `PATH`, and its service account must be permitted to access Docker. The pipeline builds a Linux image, so Docker Desktop or Docker Engine on the Windows host must be configured to run Linux containers. Deployment fingerprints are stored as Docker labels so source or Jenkins parameter changes trigger a replacement while unchanged healthy deployments are left running.
+
+The defaults publish the dashboard and noVNC only on `127.0.0.1`. For access from another machine, prefer an authenticated HTTPS reverse proxy or an SSH tunnel such as `ssh -L 18473:127.0.0.1:18473 -L 6080:127.0.0.1:6080 your-server`.
+
 ### Support
 
 If you'd encounter any issues with the miner:

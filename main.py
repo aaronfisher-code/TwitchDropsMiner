@@ -164,16 +164,21 @@ if __name__ == "__main__":
             loop.add_signal_handler(signal.SIGINT, lambda *_: client.gui.close())
             loop.add_signal_handler(signal.SIGTERM, lambda *_: client.gui.close())
         try:
+            await client.webui.start()
+            client.webui.mark_running()
             await client.run()
         except CaptchaRequired:
             exit_status = 1
+            client.webui.mark_error("Twitch requires a CAPTCHA; use the desktop view to continue.")
             client.prevent_close()
             client.print(_("error", "captcha"))
         except Exception:
             exit_status = 1
+            error = traceback.format_exc()
+            client.webui.mark_error(error)
             client.prevent_close()
             client.print("Fatal error encountered:\n")
-            client.print(traceback.format_exc())
+            client.print(error)
         finally:
             if sys.platform == "linux":
                 loop.remove_signal_handler(signal.SIGINT)
@@ -182,6 +187,8 @@ if __name__ == "__main__":
             await client.shutdown()
         if not client.gui.close_requested:
             # user didn't request the closure
+            if exit_status == 0:
+                client.webui.mark_error("The miner terminated unexpectedly.")
             client.gui.tray.change_icon("error")
             client.print(_("status", "terminated"))
             client.gui.status.update(_("gui", "status", "terminated"))
@@ -192,6 +199,8 @@ if __name__ == "__main__":
         # NOTE: we have to do it after wait_until_closed,
         # because the user can alter some settings between app termination and closing the window
         client.save(force=True)
+        client.webui.mark_stopping()
+        await client.webui.stop()
         client.gui.stop()
         client.gui.close_window()
         sys.exit(exit_status)
