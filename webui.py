@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from hmac import compare_digest
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
+from urllib.parse import quote
 
 from aiohttp import web
 
@@ -111,6 +112,8 @@ class WebUI:
         app.router.add_get("/api/health", self._health)
         app.router.add_get("/api/status", self._status)
         app.router.add_get("/api/settings", self._get_settings)
+        app.router.add_get("/api/images/campaign/{campaign_id}", self._campaign_image)
+        app.router.add_get("/api/images/benefit/{benefit_id}", self._benefit_image)
         app.router.add_put("/api/settings", self._update_settings)
         app.router.add_post("/api/actions/reload", self._reload)
 
@@ -154,7 +157,9 @@ class WebUI:
             )
         else:
             response = await handler(request)
-        response.headers["Cache-Control"] = "no-store"
+        response.headers["Cache-Control"] = (
+            "private, max-age=3600" if request.path.startswith("/api/images/") else "no-store"
+        )
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "no-referrer"
@@ -185,6 +190,44 @@ class WebUI:
 
     async def _get_settings(self, request: web.Request) -> web.Response:
         return web.json_response(self._settings_snapshot())
+
+    async def _campaign_image(self, request: web.Request) -> web.Response:
+        campaign_id = request.match_info["campaign_id"]
+        for campaign in tuple(self._twitch.inventory):
+            if campaign.id == campaign_id:
+                return await self._proxy_image(campaign.image_url)
+        raise web.HTTPNotFound(text="Campaign image not found")
+
+    async def _benefit_image(self, request: web.Request) -> web.Response:
+        benefit_id = request.match_info["benefit_id"]
+        for campaign in tuple(self._twitch.inventory):
+            for drop in campaign.drops:
+                for benefit in drop.benefits:
+                    if benefit.id == benefit_id:
+                        return await self._proxy_image(benefit.image_url)
+        raise web.HTTPNotFound(text="Drop image not found")
+
+    async def _proxy_image(self, image_url: Any) -> web.Response:
+        if not image_url:
+            raise web.HTTPNotFound(text="Image not available")
+        try:
+            async with self._twitch.request("GET", image_url) as response:
+                if response.status != 200:
+                    raise web.HTTPNotFound(text="Image not available")
+                content_type = response.content_type.lower()
+                if content_type not in {"image/gif", "image/jpeg", "image/png", "image/webp"}:
+                    raise web.HTTPUnsupportedMediaType(text="Unsupported image type")
+                image = await response.read()
+        except web.HTTPException:
+            raise
+        except Exception as exc:
+            logging.getLogger("TwitchDrops").debug(
+                "Unable to load a WebUI image", exc_info=exc
+            )
+            raise web.HTTPBadGateway(text="Unable to load image") from exc
+        if len(image) > 10 * 1024 * 1024:
+            raise web.HTTPRequestEntityTooLarge(max_size=10 * 1024 * 1024, actual_size=len(image))
+        return web.Response(body=image, content_type=content_type)
 
     async def _reload(self, request: web.Request) -> web.Response:
         self._twitch.change_state(State.INVENTORY_FETCH)
@@ -292,8 +335,13 @@ class WebUI:
         except Exception:
             desktop_status = ""
 
+        configured_games = {name.casefold() for name in twitch.settings.priority}
         campaigns = sorted(
-            twitch.inventory,
+            (
+                campaign
+                for campaign in twitch.inventory
+                if campaign.game.name.casefold() in configured_games
+            ),
             key=lambda campaign: (not campaign.active, campaign.ends_at),
         )
         return {
@@ -333,7 +381,7 @@ class WebUI:
                 "total": len(websockets),
                 "topics": sum(len(socket.topics) for socket in websockets),
             },
-            "campaigns": [self._campaign_snapshot(campaign) for campaign in campaigns[:60]],
+            "campaigns": [self._campaign_snapshot(campaign) for campaign in campaigns],
             "events": list(self._events),
             "settings": self._settings_snapshot(),
             "novnc_port": self._novnc_port,
@@ -361,6 +409,14 @@ class WebUI:
             "id": drop.id,
             "name": drop.name,
             "rewards": drop.rewards_text(),
+            "benefits": [
+                {
+                    "id": benefit.id,
+                    "name": benefit.name,
+                    "image_url": f"/api/images/benefit/{quote(benefit.id, safe='')}",
+                }
+                for benefit in drop.benefits
+            ],
             "progress": drop.progress,
             "current_minutes": drop.current_minutes,
             "required_minutes": drop.required_minutes,
@@ -382,6 +438,7 @@ class WebUI:
             "id": campaign.id,
             "name": campaign.name,
             "game": campaign.game.name,
+            "image_url": f"/api/images/campaign/{quote(campaign.id, safe='')}",
             "active": campaign.active,
             "upcoming": campaign.upcoming,
             "expired": campaign.expired,

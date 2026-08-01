@@ -106,15 +106,52 @@
     }
     .progress > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), #d25cff); transition: width .35s ease; }
     .drop-name { font-size: 20px; font-weight: 750; }
+    .benefit-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .benefit-list:empty { display: none; }
+    .benefit-card {
+      width: 92px;
+      padding: 7px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: #101217;
+    }
+    .benefit-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      border-radius: 6px;
+      background: #090a0d;
+    }
+    .benefit-name {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
     .fact { background: var(--surface-2); border-radius: 8px; padding: 10px; }
     .fact span { display: block; color: var(--muted); font-size: 12px; }
     .campaign-list { display: grid; gap: 10px; max-height: 650px; overflow: auto; padding-right: 3px; }
     .campaign { padding: 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+    .campaign-body { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+    .campaign-cover {
+      width: 72px;
+      height: 96px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #090a0d;
+    }
+    .campaign-content { min-width: 0; }
     .campaign-top { display: flex; justify-content: space-between; gap: 10px; }
     .campaign-title { font-weight: 700; }
     .campaign-state { color: var(--muted); font-size: 12px; }
     .campaign-state.active { color: var(--green); }
+    .campaign .benefit-list { gap: 7px; margin-top: 10px; }
+    .campaign .benefit-card { width: 72px; padding: 5px; }
+    .campaign .benefit-name { font-size: 10px; }
     .logs {
       height: 360px;
       overflow: auto;
@@ -195,6 +232,7 @@
             </div>
             <div id="drop-game" class="badge">Idle</div>
           </div>
+          <div id="drop-benefits" class="benefit-list"></div>
           <div class="progress-row"><span>Drop progress</span><strong id="drop-percent">0%</strong></div>
           <div class="progress"><span id="drop-bar"></span></div>
           <div class="progress-row"><span>Campaign progress</span><strong id="campaign-percent">0%</strong></div>
@@ -288,6 +326,25 @@
       return `${Math.floor(seconds / 3600)}h ago`;
     }
 
+    function appendBenefits(root, benefits, limit = 20) {
+      root.replaceChildren();
+      for (const benefit of (benefits || []).slice(0, limit)) {
+        const card = document.createElement('div');
+        card.className = 'benefit-card';
+        card.title = benefit.name;
+        const image = document.createElement('img');
+        image.src = benefit.image_url;
+        image.alt = benefit.name;
+        image.loading = 'lazy';
+        image.addEventListener('error', () => { image.style.display = 'none'; });
+        const name = document.createElement('div');
+        name.className = 'benefit-name';
+        name.textContent = benefit.name;
+        card.append(image, name);
+        root.append(card);
+      }
+    }
+
     function renderDrop(drop) {
       if (!drop) {
         text('drop-name', 'No active drop');
@@ -300,6 +357,7 @@
         text('campaign-time', '—');
         setBar('drop-bar', 0);
         setBar('campaign-bar', 0);
+        byId('drop-benefits').replaceChildren();
         return;
       }
       text('drop-name', drop.name || drop.campaign);
@@ -312,22 +370,35 @@
       text('campaign-time', duration(drop.campaign_remaining_minutes));
       setBar('drop-bar', drop.progress);
       setBar('campaign-bar', drop.campaign_progress);
+      appendBenefits(byId('drop-benefits'), drop.benefits);
     }
 
-    function renderCampaigns(campaigns) {
+    function renderCampaigns(campaigns, configuredGames) {
       const root = byId('campaigns');
       root.replaceChildren();
-      text('campaign-count', `${campaigns.length} loaded`);
+      text('campaign-count', `${campaigns.length} for ${configuredGames.length} configured game${configuredGames.length === 1 ? '' : 's'}`);
       if (!campaigns.length) {
         const empty = document.createElement('span');
         empty.className = 'muted';
-        empty.textContent = 'No campaigns loaded.';
+        empty.textContent = configuredGames.length
+          ? 'No campaigns found for your configured priority games.'
+          : 'Add games to Priority games in Settings to show their campaigns.';
         root.append(empty);
         return;
       }
       for (const campaign of campaigns) {
         const card = document.createElement('div');
         card.className = 'campaign';
+        const body = document.createElement('div');
+        body.className = 'campaign-body';
+        const cover = document.createElement('img');
+        cover.className = 'campaign-cover';
+        cover.src = campaign.image_url;
+        cover.alt = `${campaign.game} campaign artwork`;
+        cover.loading = 'lazy';
+        cover.addEventListener('error', () => { cover.style.visibility = 'hidden'; });
+        const content = document.createElement('div');
+        content.className = 'campaign-content';
         const top = document.createElement('div');
         top.className = 'campaign-top';
         const title = document.createElement('div');
@@ -350,7 +421,22 @@
         const fill = document.createElement('span');
         fill.style.width = `${Math.max(0, Math.min(1, campaign.progress || 0)) * 100}%`;
         progress.append(fill);
-        card.append(top, info, progress);
+        const benefitsRoot = document.createElement('div');
+        benefitsRoot.className = 'benefit-list';
+        const benefits = [];
+        const benefitIds = new Set();
+        for (const drop of campaign.drops || []) {
+          for (const benefit of drop.benefits || []) {
+            if (!benefitIds.has(benefit.id)) {
+              benefitIds.add(benefit.id);
+              benefits.push(benefit);
+            }
+          }
+        }
+        appendBenefits(benefitsRoot, benefits, 12);
+        content.append(top, info, progress, benefitsRoot);
+        body.append(cover, content);
+        card.append(body);
         root.append(card);
       }
     }
@@ -428,7 +514,7 @@
         alert.style.display = 'none';
       }
       renderDrop(data.active_drop);
-      renderCampaigns(data.campaigns);
+      renderCampaigns(data.campaigns, data.settings.priority);
       renderLogs(data.events);
       renderSettings(data.settings);
     }
