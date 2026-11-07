@@ -131,7 +131,7 @@ DEFAULT_LANG = "English"
 PING_INTERVAL = timedelta(minutes=3)
 PING_TIMEOUT = timedelta(seconds=10)
 ONLINE_DELAY = timedelta(seconds=120)
-WATCH_INTERVAL = timedelta(seconds=59)
+WATCH_INTERVAL = timedelta(seconds=20)
 # Strings
 WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
 # Logging
@@ -170,7 +170,7 @@ class ClientType:
         "kimne78kx3ncx6brgo4mv6wki5h1ko",
         (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+            "(KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
         ),
     )
     MOBILE_WEB = ClientInfo(
@@ -181,31 +181,31 @@ class ClientType:
             # other platforms only use the major version
             (
                 "Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; SM-A205U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; SM-A102U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; SM-G960U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; SM-N960U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; LM-Q720) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
             (
                 "Mozilla/5.0 (Linux; Android 16; LM-X420) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
+                "(KHTML, like Gecko) Chrome/156.0.8078.54 Mobile Safari/537.36"
             ),
         ]
     )
@@ -215,31 +215,31 @@ class ClientType:
         [
             (
                 "Dalvik/2.1.0 (Linux; U; Android 16; SM-S911B Build/TP1A.220624.014) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; U; Android 16; SM-S938B Build/BP2A.250605.031) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; Android 16; SM-X716N Build/UP1A.231005.007) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; U; Android 15; SM-G990B Build/AP3A.240905.015.A2) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; U; Android 15; SM-G970F Build/AP3A.241105.008) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; U; Android 15; SM-A566E Build/AP3A.240905.015.A2) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
             (
                 "Dalvik/2.1.0 (Linux; U; Android 14; SM-X306B Build/UP1A.231005.007) "
-                "tv.twitch.android.app/25.3.0/2503006"
+                "tv.twitch.android.app/31.8.0/3108006"
             ),
         ]
     )
@@ -248,7 +248,7 @@ class ClientType:
         "ue6666qo983tsx6so1t0vnawi233wa",
         (
             "Mozilla/5.0 (Linux; Android 7.1; Smart Box C1) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+            "(KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"
         ),
     )
 
@@ -366,7 +366,7 @@ GQL_QUERIES: dict[str, GQLPersistedQuery] = {
     # returns all available campaigns
     "Campaigns": GQLPersistedQuery(
         "ViewerDropsDashboard",
-        "d9cae7761dafab85908c85e6683cb4201b449e66ac3bb5e894f15ff12aeafaa7",
+        "c16bb890cc8ce7647a96ee69cd313d423a378a3dedadf630a1017cde18975feb",
         variables={
             "fetchRewardCampaigns": False,
         }

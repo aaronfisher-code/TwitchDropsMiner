@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TDM_DATA_DIR=/data \
+    TDM_BROWSER_SANDBOX=0 \
     DISPLAY=:99 \
     DISPLAY_WIDTH=1280 \
     DISPLAY_HEIGHT=800 \
@@ -15,6 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
         ca-certificates \
+        chromium \
         dbus-x11 \
         gir1.2-gtk-3.0 \
         novnc \

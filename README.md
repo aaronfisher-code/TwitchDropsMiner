@@ -87,6 +87,10 @@ The container provides two browser interfaces:
 2. Run `docker compose up --detach --build`.
 3. Open the noVNC desktop once to log in to Twitch, then use `http://localhost:18473` for routine monitoring and settings.
 
+The current upstream login flow opens a Chromium-based browser. The Docker image includes Chromium; complete the Twitch login in its window through the noVNC desktop. When running from source outside Docker, install a compatible browser (Chrome, Chromium, Edge, or Brave) and update the Python dependencies with `pip install -r requirements.txt`. Existing valid sessions are reused.
+
+The container sets `TDM_BROWSER_SANDBOX=0` because Chromium's sandbox cannot run under standard Docker restrictions. The application and browser run as the unprivileged `tdm` user. Outside Docker, the browser sandbox remains enabled by default.
+
 Cookies, settings, logs, and cached images are stored in the `twitch-drops-data` Docker volume. Rebuilding or replacing the container does not remove this volume. Treat it as sensitive because it contains the Twitch session cookie. To stop the app without deleting its state, run `docker compose down` (do not add `--volumes`).
 
 For automatic updates, commit and push all of this project's real Docker, WebUI, and Python files to your fork. Create a regular Jenkins **Pipeline** job, paste the included `Jenkinsfile` into its **Pipeline script** field, and set the `FORK_REPOSITORY_URL` build parameter to your fork's HTTPS clone URL. Every run starts with a clean `git clone` of the selected fork branch, merges the latest parent [DevilXD/TwitchDropsMiner repository](https://github.com/DevilXD/TwitchDropsMiner) branch into that disposable checkout, validates the required files, and builds/redeploys it with Docker Compose. The merge is used for the deployment but is not pushed back to your fork. A conflict fails safely and must be resolved in the fork.
